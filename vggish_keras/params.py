@@ -51,6 +51,8 @@ OUTPUT_OP_NAME = 'vggish/embedding'
 OUTPUT_TENSOR_NAME = OUTPUT_OP_NAME + ':0'
 AUDIO_EMBEDDING_FEATURE_NAME = 'audio_embedding'
 
+PUMP_INPUT = 'mel/mag'
+
 import pkg_resources
 resfile = lambda f: pkg_resources.resource_filename(__name__, f)
 
