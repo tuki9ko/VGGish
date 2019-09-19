@@ -17,7 +17,9 @@ else:
 setuptools.setup(name='vggish_keras',
                  version='0.0.1',
                  description='VGGish in Keras.',
-                 long_description=open('README.md').read().strip(),
+                 long_description=open(
+                    os.path.join(os.path.dirname(__file__), 'README.md')
+                ).read().strip(),
                  author='Bea Steers',
                  author_email='bea.steers@gmail.com',
                  # url='http://path-to-my-packagename',
