@@ -96,3 +96,51 @@ if os.path.isfile(params.PCA_PARAMS):
 else:
     postprocess = None
     warnings.warn('Could not find PCA parameters at {}'.format(params.PCA_PARAMS))
+
+
+import tensorflow as tf
+from tensorflow.keras.layers import Layer
+import tensorflow.keras.backend as K
+
+class PostprocessLayer(Layer):
+    def __init__(self, params_path):
+        self.params_path = params_path
+
+    def build(self, input_shape):
+        with np.load(self.params_path) as data:
+            pca_matrix = data[params.PCA_EIGEN_VECTORS_NAME]
+            # Load means into a column vector for easier broadcasting later.
+            pca_means = data[params.PCA_MEANS_NAME].reshape(-1, 1)
+
+        self.pca_matrix = self.add_weight(
+            name='pca_matrix',
+            shape=pca_matrix.shape, dtype=pca_matrix.dtype,
+            initializer='zeros', trainable=False)
+
+        self.pca_means = self.add_weight(
+            name='pca_means',
+            shape=pca_means.shape, dtype=pca_means.dtype,
+            initializer='zeros', trainable=False)
+
+        self.set_weights([pca_matrix, pca_means])
+
+    def call(self, x):
+        # Apply PCA.
+        # - Embeddings come in as [batch_size, embedding_size].
+        # - Transpose to [embedding_size, batch_size].
+        # - Subtract pca_means column vector from each column.
+        # - Premultiply by PCA matrix of shape [output_dims, input_dims]
+        #   where both are are equal to embedding_size in our case.
+        # - Transpose result back to [batch_size, embedding_size].
+        x = K.dot(self.pca_matrix, (x.T - self.pca_means), 1).T
+
+        # Quantize by:
+        # - clipping to [min, max] range
+        x = tf.clip_by_value(x, params.QUANTIZE_MIN_VAL, params.QUANTIZE_MAX_VAL)
+        # - convert to 8-bit in range [0.0, 255.0]
+        x = ((x - params.QUANTIZE_MIN_VAL) *
+             (255.0 / (params.QUANTIZE_MAX_VAL - params.QUANTIZE_MIN_VAL)))
+        # - cast 8-bit float to uint8
+        x = tf.cast(x, tf.uint8)
+
+        return x

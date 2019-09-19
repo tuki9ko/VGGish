@@ -13,6 +13,7 @@ from tensorflow.keras.models import Model
 import tensorflow.keras.layers as tfkl
 import tensorflow.keras.backend as K
 
+from .postprocess import PostprocessLayer
 from . import params
 
 
@@ -21,7 +22,8 @@ def VGGish(pump_op=None,
            include_top=False,
            pooling='avg',
            weights='audioset',
-           name='vggish'):
+           name='vggish',
+           compress=True):
     '''A Keras implementation of the VGGish architecture.
 
     Arguments:
@@ -93,6 +95,8 @@ def VGGish(pump_op=None,
         x = dense(4096, name='vggish_fc1/fc1_2')(x)
         x = dense(params.EMBEDDING_SIZE, name='vggish_fc2')(x)
 
+        if compress:
+            x = PostprocessLayer(params.PCA_PARAMS)(x)
     else:
         globalpool = (
             tfkl.GlobalAveragePooling2D() if pooling == 'avg' else
@@ -100,6 +104,8 @@ def VGGish(pump_op=None,
 
         if globalpool:
             x = globalpool(x)
+
+
 
     # Create model
     model = Model(inputs, x, name=name)
@@ -113,6 +119,6 @@ def VGGish(pump_op=None,
 
     # load weights
     if weights and os.path.isfile(weights):
-        model.load_weights(weights)
+        model.load_weights(weights, by_name=True)
 
     return model
