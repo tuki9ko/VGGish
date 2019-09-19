@@ -50,3 +50,15 @@ INPUT_TENSOR_NAME = INPUT_OP_NAME + ':0'
 OUTPUT_OP_NAME = 'vggish/embedding'
 OUTPUT_TENSOR_NAME = OUTPUT_OP_NAME + ':0'
 AUDIO_EMBEDDING_FEATURE_NAME = 'audio_embedding'
+
+import pkg_resources
+resfile = lambda f: pkg_resources.resource_filename(__name__, f)
+
+WEIGHTS_PATHS = {
+    'audioset': {
+        'no_top': resfile('model/audioset_no_top.h5'),
+        'top': resfile('model/audioset_top.h5'),
+    },
+}
+
+PCA_PARAMS = resfile('model/audioset_pca_params.npz')
