@@ -1,6 +1,9 @@
 # model+pca weights
 vggish_keras/model/
 
+# OSX
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
