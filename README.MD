@@ -22,21 +22,22 @@ pip install git+https://github.com/beasteers/pumpp@tf_keras
 ## Usage
 ```python
 import librosa
+import numpy as np
 import vggish_keras as vgk
-INPUT = vgk.params.PUMP_INPUT
 
 # define the model
 pump = vgk.get_pump()
 model = vgk.VGGish(pump)
 
 # transform audio into VGGish embeddings without fc layers
-X = pump.transform(librosa.util.example_audio_file())[INPUT]
+X = pump.transform(librosa.util.example_audio_file())['mel/mag']
+X = np.concatenate([X]*5)
 Z = model.predict(X)
 
 # calculate timestamps
-op = pump[INPUT]
+op = pump['mel']
 ts = np.arange(len(Z)) / op.sr * op.hop_length
-
+assert Z.shape == (5, 512)
 ```
 
 ## Reference:
