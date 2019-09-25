@@ -30,7 +30,7 @@ pump = vgk.get_pump()
 model = vgk.VGGish(pump)
 
 # transform audio into VGGish embeddings without fc layers
-X = pump.transform(librosa.util.example_audio_file())['mel/mag']
+X = pump.transform(librosa.util.example_audio_file())[vgk.params.PUMP_INPUT]
 X = np.concatenate([X]*5)
 Z = model.predict(X)
 
