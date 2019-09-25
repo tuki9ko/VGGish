@@ -13,6 +13,12 @@ pip install vggish-keras
 ```
 Weights will be automatically downloaded when installing via pip. 
 
+Currently - this relies on a pending change to `pumpp` in https://github.com/bmcfee/pumpp/pull/123. To get those changes, you need 
+
+```bash
+pip install git+https://github.com/beasteers/pumpp@tf_keras
+```
+
 ## Usage
 ```python
 import librosa
