@@ -1,6 +1,13 @@
-'''
+'''Convert the original vggish_model.ckpt into new Keras format.
 
+This requires that you have:
+ - vggish_keras installed (this package)
+ - openmic installed (https://github.com/cosmir/openmic-2018.git)
+ - have run: ``openmic-2018/scripts/download_deps.sh``
 
+Basically, you need a working installation of openmic.
+
+This will write the weights for immediate use with vggish_keras. Yayy!!!
 
 '''
 
@@ -52,7 +59,7 @@ def convert():
 
     model.summary()
 
-    model.save('vggish_audioset_weights.h5')
+    model.save(vgk.params.WEIGHTS_PATHS['audioset'])
 
 if __name__ == '__main__':
     convert()
