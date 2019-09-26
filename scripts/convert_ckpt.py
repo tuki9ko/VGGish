@@ -12,6 +12,7 @@ This will write the weights for immediate use with vggish_keras. Yayy!!!
 '''
 
 def convert():
+    import os
     import tensorflow as tf
     import tensorflow.keras.backend as K
     import openmic.vggish as ovg
@@ -59,7 +60,9 @@ def convert():
 
     model.summary()
 
-    model.save(vgk.params.WEIGHTS_PATHS['audioset'])
+    os.makedirs(os.path.dirname(vgk.params.WEIGHTS_PATHS['audioset']), exist_ok=True)
+    model.save_weights(vgk.params.WEIGHTS_PATHS['audioset'])
+    print('saved to:', vgk.params.WEIGHTS_PATHS['audioset'])
 
 if __name__ == '__main__':
     convert()

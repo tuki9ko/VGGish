@@ -29,7 +29,7 @@ class Postprocess(Layer):
     def build(self, input_shape):
         input_shape = tuple(int(x) for x in tuple(input_shape)[1:])
         emb_shape = (self.emb_shape,) if self.emb_shape else input_shape
-        
+
         self.pca_matrix = self.add_weight(
             name='pca_matrix', shape=emb_shape + input_shape)
         self.pca_means = self.add_weight(
@@ -53,4 +53,4 @@ class Postprocess(Layer):
         x = tf.clip_by_value(x, params.QUANTIZE_MIN_VAL, params.QUANTIZE_MAX_VAL)
         x = ((x - params.QUANTIZE_MIN_VAL) *
              (255.0 / (params.QUANTIZE_MAX_VAL - params.QUANTIZE_MIN_VAL)))
-        return K.cast(x, tf.uint8)
+        return K.cast(x, 'uint8')
