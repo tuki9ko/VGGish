@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model
 import tensorflow.keras.layers as tfkl
 import tensorflow.keras.backend as K
 
-from .postprocess import PostprocessLayer
+from .postprocess import Postprocess
 from . import params
 
 
@@ -24,7 +24,7 @@ def VGGish(pump=None,
            pooling='avg',
            weights='audioset',
            name='vggish',
-           compress=True):
+           compress=False):
     '''A Keras implementation of the VGGish architecture.
 
     Arguments:
@@ -101,7 +101,7 @@ def VGGish(pump=None,
             x = dense(params.EMBEDDING_SIZE, name='fc2')(x)
 
             if compress:
-                x = PostprocessLayer(params.PCA_PARAMS)(x)
+                x = Postprocess(params.PCA_PARAMS)(x)
         else:
             globalpool = (
                 tfkl.GlobalAveragePooling2D() if pooling == 'avg' else
@@ -117,10 +117,7 @@ def VGGish(pump=None,
 
         # lookup weights location
         if weights in params.WEIGHTS_PATHS:
-            w = params.WEIGHTS_PATHS[weights]
-            weight_type = 'top' if include_top else 'no_top'
-            if weight_type in w:
-                weights = w[weight_type]
+            weights = params.WEIGHTS_PATHS[weights]
 
         # load weights
         if weights and os.path.isfile(weights):

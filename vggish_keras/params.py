@@ -18,7 +18,7 @@ See vggish_slim.py for more information.
 """
 
 # Architectural constants.
-NUM_FRAMES = 496  # Frames in input mel-spectrogram patch.
+NUM_FRAMES = 96  # Frames in input mel-spectrogram patch.
 NUM_BANDS = 64  # Frequency bands in input mel-spectrogram patch.
 EMBEDDING_SIZE = 128  # Size of embedding layer.
 
@@ -57,10 +57,7 @@ import pkg_resources
 resfile = lambda f: pkg_resources.resource_filename(__name__, f)
 
 WEIGHTS_PATHS = {
-    'audioset': {
-        'no_top': resfile('model/audioset_no_top.h5'),
-        'top': resfile('model/audioset_top.h5'),
-    },
+    'audioset': resfile('model/audioset_weights.h5')
 }
 
 PCA_PARAMS = resfile('model/audioset_pca_params.npz')

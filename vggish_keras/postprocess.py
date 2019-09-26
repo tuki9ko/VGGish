@@ -102,9 +102,10 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer
 import tensorflow.keras.backend as K
 
-class PostprocessLayer(Layer):
-    def __init__(self, params_path):
+class Postprocess(Layer):
+    def __init__(self, params_path, *a, **kw):
         self.params_path = params_path
+        super().__init__(*a, **kw)
 
     def build(self, input_shape):
         with np.load(self.params_path) as data:
@@ -114,12 +115,12 @@ class PostprocessLayer(Layer):
 
         self.pca_matrix = self.add_weight(
             name='pca_matrix',
-            shape=pca_matrix.shape, dtype=pca_matrix.dtype,
+            shape=pca_matrix.shape, dtype='float32',
             initializer='zeros', trainable=False)
 
         self.pca_means = self.add_weight(
             name='pca_means',
-            shape=pca_means.shape, dtype=pca_means.dtype,
+            shape=pca_means.shape, dtype='float32',
             initializer='zeros', trainable=False)
 
         self.set_weights([pca_matrix, pca_means])
@@ -132,7 +133,8 @@ class PostprocessLayer(Layer):
         # - Premultiply by PCA matrix of shape [output_dims, input_dims]
         #   where both are are equal to embedding_size in our case.
         # - Transpose result back to [batch_size, embedding_size].
-        x = K.dot(self.pca_matrix, (x.T - self.pca_means), 1).T
+        x = K.dot(self.pca_matrix, (K.transpose(x) - self.pca_means))
+        x = K.transpose(x)
 
         # Quantize by:
         # - clipping to [min, max] range
@@ -141,6 +143,6 @@ class PostprocessLayer(Layer):
         x = ((x - params.QUANTIZE_MIN_VAL) *
              (255.0 / (params.QUANTIZE_MAX_VAL - params.QUANTIZE_MIN_VAL)))
         # - cast 8-bit float to uint8
-        x = tf.cast(x, tf.uint8)
+        x = K.cast(x, tf.uint8)
 
         return x
