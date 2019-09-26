@@ -7,6 +7,7 @@
 """
 
 import os
+import logging
 from functools import partial
 
 import tensorflow as tf
@@ -16,6 +17,8 @@ import tensorflow.keras.backend as K
 
 from .postprocess import Postprocess
 from . import params
+
+log = logging.getLogger(__name__)
 
 
 def VGGish(pump=None,
@@ -117,10 +120,15 @@ def VGGish(pump=None,
 
         # lookup weights location
         if weights in params.WEIGHTS_PATHS:
-            weights = params.WEIGHTS_PATHS[weights]
+            w_name, weights = weights, params.WEIGHTS_PATHS[weights]
+
+            if not os.path.isfile(weights):
+                log.warning(f'"{weights}" weights have not been downloaded. Downloading now...')
+                from .download_helpers import download_weights
+                download_weights.download(w_name)
 
         # load weights
-        if weights and os.path.isfile(weights):
+        if weights:
             model.load_weights(weights, by_name=True)
 
     return model
