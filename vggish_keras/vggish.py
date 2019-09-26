@@ -101,7 +101,7 @@ def VGGish(pump=None,
             x = dense(params.EMBEDDING_SIZE, name='fc2')(x)
 
             if compress:
-                x = Postprocess(params.PCA_PARAMS)(x)
+                x = Postprocess()(x)
         else:
             globalpool = (
                 tfkl.GlobalAveragePooling2D() if pooling == 'avg' else

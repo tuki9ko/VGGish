@@ -14,116 +14,26 @@
 # ==============================================================================
 
 """Post-process embeddings from VGGish."""
-import os
-import numpy as np
-from . import params
-
-import warnings
-
-
-class Postprocessor:
-    """Post-processes VGGish embeddings.
-    The initial release of AudioSet included 128-D VGGish embeddings for each
-    segment of AudioSet. These released embeddings were produced by applying
-    a PCA transformation (technically, a whitening transform is included as
-    well) and 8-bit quantization to the raw embedding output from VGGish, in
-    order to stay compatible with the YouTube-8M project which provides visual
-    embeddings in the same format for a large set of YouTube videos. This
-    class implements the same PCA (with whitening) and quantization
-    transformations.
-    """
-
-    def __init__(self, pca_params_npz_path):
-        """Constructs a postprocessor.
-        Args:
-            pca_params_npz_path: Path to a NumPy-format .npz file that
-            contains the PCA parameters used in postprocessing.
-        """
-        with np.load(pca_params_npz_path) as data:
-            self._pca_matrix = data[params.PCA_EIGEN_VECTORS_NAME]
-            # Load means into a column vector for easier broadcasting later.
-            self._pca_means = data[params.PCA_MEANS_NAME].reshape(-1, 1)
-
-        assert self._pca_matrix.shape == (
-            params.EMBEDDING_SIZE, params.EMBEDDING_SIZE), (
-                'Bad PCA matrix shape: %r' % (self._pca_matrix.shape,))
-        assert self._pca_means.shape == (params.EMBEDDING_SIZE, 1), (
-            'Bad PCA means shape: %r' % (self._pca_means.shape,))
-
-    def postprocess(self, embeddings_batch):
-        """Applies postprocessing to a batch of embeddings.
-        Args:
-          embeddings_batch: An nparray of shape [batch_size, embedding_size]
-            containing output from the embedding layer of VGGish.
-        Returns:
-          An nparray of the same shape as the input but of type uint8,
-          containing the PCA-transformed and quantized version of the input.
-        """
-        assert len(embeddings_batch.shape) == 2, (
-            'Expected 2-d batch, got %r' % (embeddings_batch.shape,))
-        assert embeddings_batch.shape[1] == params.EMBEDDING_SIZE, (
-            'Bad batch shape: %r' % (embeddings_batch.shape,))
-
-        # Apply PCA.
-        # - Embeddings come in as [batch_size, embedding_size].
-        # - Transpose to [embedding_size, batch_size].
-        # - Subtract pca_means column vector from each column.
-        # - Premultiply by PCA matrix of shape [output_dims, input_dims]
-        #   where both are are equal to embedding_size in our case.
-        # - Transpose result back to [batch_size, embedding_size].
-        pca_applied = np.dot(self._pca_matrix,
-                             (embeddings_batch.T - self._pca_means)).T
-
-        # Quantize by:
-        # - clipping to [min, max] range
-        clipped_embeddings = np.clip(
-            pca_applied, params.QUANTIZE_MIN_VAL,
-            params.QUANTIZE_MAX_VAL)
-        # - convert to 8-bit in range [0.0, 255.0]
-        quantized_embeddings = (
-            (clipped_embeddings - params.QUANTIZE_MIN_VAL) *
-            (255.0 / (params.QUANTIZE_MAX_VAL -
-                      params.QUANTIZE_MIN_VAL)))
-        # - cast 8-bit float to uint8
-        quantized_embeddings = quantized_embeddings.astype(np.uint8)
-
-        return quantized_embeddings
-
-
-if os.path.isfile(params.PCA_PARAMS):
-    __pproc__ = Postprocessor(params.PCA_PARAMS)
-    postprocess = __pproc__.postprocess
-else:
-    postprocess = None
-    warnings.warn('Could not find PCA parameters at {}'.format(params.PCA_PARAMS))
-
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 import tensorflow.keras.backend as K
 
+from . import params
+
 class Postprocess(Layer):
-    def __init__(self, params_path, *a, **kw):
-        self.params_path = params_path
-        super().__init__(*a, **kw)
+    def __init__(self, output_shape=None, **kw):
+        self.emb_shape = output_shape
+        super().__init__(**kw)
 
     def build(self, input_shape):
-        with np.load(self.params_path) as data:
-            pca_matrix = data[params.PCA_EIGEN_VECTORS_NAME]
-            # Load means into a column vector for easier broadcasting later.
-            pca_means = data[params.PCA_MEANS_NAME].reshape(-1, 1)
-
+        input_shape = tuple(int(x) for x in tuple(input_shape)[1:])
+        emb_shape = (self.emb_shape,) if self.emb_shape else input_shape
+        
         self.pca_matrix = self.add_weight(
-            name='pca_matrix',
-            shape=pca_matrix.shape, dtype='float32',
-            initializer='zeros', trainable=False)
-
+            name='pca_matrix', shape=emb_shape + input_shape)
         self.pca_means = self.add_weight(
-            name='pca_means',
-            shape=pca_means.shape, dtype='float32',
-            initializer='zeros', trainable=False)
-
-        self.set_weights([pca_matrix, pca_means])
+            name='pca_means', shape=input_shape + (1,))
 
     def call(self, x):
         # Apply PCA.
@@ -138,11 +48,9 @@ class Postprocess(Layer):
 
         # Quantize by:
         # - clipping to [min, max] range
-        x = tf.clip_by_value(x, params.QUANTIZE_MIN_VAL, params.QUANTIZE_MAX_VAL)
         # - convert to 8-bit in range [0.0, 255.0]
+        # - cast 8-bit float to uint8
+        x = tf.clip_by_value(x, params.QUANTIZE_MIN_VAL, params.QUANTIZE_MAX_VAL)
         x = ((x - params.QUANTIZE_MIN_VAL) *
              (255.0 / (params.QUANTIZE_MAX_VAL - params.QUANTIZE_MIN_VAL)))
-        # - cast 8-bit float to uint8
-        x = K.cast(x, tf.uint8)
-
-        return x
+        return K.cast(x, tf.uint8)
