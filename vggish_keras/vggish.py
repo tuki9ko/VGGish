@@ -113,22 +113,25 @@ def VGGish(pump=None,
             if globalpool:
                 x = globalpool(x)
 
-
-
         # Create model
         model = Model(inputs, x, name='model')
+        load_vggish_weights(model, weights, strict=bool(weights))
+    return model
 
-        # lookup weights location
-        if weights in params.WEIGHTS_PATHS:
-            w_name, weights = weights, params.WEIGHTS_PATHS[weights]
 
-            if not os.path.isfile(weights):
-                log.warning(f'"{weights}" weights have not been downloaded. Downloading now...')
-                from .download_helpers import download_weights
-                download_weights.download(w_name)
+def load_vggish_weights(model, weights, strict=False):
+    # lookup weights location
+    if weights in params.WEIGHTS_PATHS:
+        w_name, weights = weights, params.WEIGHTS_PATHS[weights]
 
-        # load weights
-        if weights:
-            model.load_weights(weights, by_name=True)
+        if not os.path.isfile(weights):
+            log.warning(f'"{weights}" weights have not been downloaded. Downloading now...')
+            from .download_helpers import download_weights
+            download_weights.download(w_name)
 
+    # load weights
+    if weights:
+        model.load_weights(weights, by_name=True)
+    elif strict:
+        raise RuntimeError('No weights could be found for weights={}'.format(weights))
     return model
