@@ -11,9 +11,9 @@ For more details, please visit the [slim version](https://github.com/tensorflow/
 ```bash
 pip install vggish-keras
 ```
-Weights will be automatically downloaded when installing via pip. 
+Weights will be downloaded the first time they are requested. You can also run `python -m vggish_keras.download_helpers.download_weights` which will download them.
 
-Currently - this relies on a pending change to `pumpp` in https://github.com/bmcfee/pumpp/pull/123. To get those changes, you need 
+NOTE: Currently - this relies on a pending change to `pumpp` in https://github.com/bmcfee/pumpp/pull/123. To get those changes, you need 
 
 ```bash
 pip install git+https://github.com/beasteers/pumpp@tf_keras
@@ -50,11 +50,7 @@ assert Z.shape == (5, 512)
   [CNN Architectures for Large-Scale Audio Classification](https://research.google.com/pubs/pub45611.html),
   ICASSP 2017
   
-* [Model](https://drive.google.com/open?id=1mhqXZ8CANgHyepum7N4yrjiyIg6qaMe6) with the top fully connected layers
-
-* [Model](https://drive.google.com/open?id=16JrWEedwaZFVZYvn1woPKCuWx85Ghzkp) without the top fully connected layers
+I include a weight conversion script in [download_helpers/convert_ckpt.py](https://github.com/beasteers/VGGish/blob/master/vggish_keras/download_helpers/convert_ckpt.py) which shows how I converted the weights from `.ckpt` to `.h5` for [those](https://github.com/DTaoo/VGGish/issues/6) that are interested. 
 
 ## TODO
- - add fully connected layers
- - add PCA postprocessing (needs fully connected layers and to add PCA params to model)
  - currently, parameters (sample rate, hop size, etc) can be changed globally via `vgk.params` - I'd like to allow for parameter overrides to be passed to `vgk.VGGish`
