@@ -65,3 +65,8 @@ def download_gdrive_file(path, gdrive_id=None):
 
 def download(name='audioset'):
     return [download_gdrive_file(os.path.abspath(f), url) for f, url in FILES[name]]
+
+if __name__ == '__main__':
+    for name in FILES:
+        log.info('Downloading weights for {}...'.format(name))
+        download(name)
