@@ -26,7 +26,7 @@ compute = vgk.get_embedding_function(hop_duration=0.25)
 compute.model.summary() # take a peak at the model
 
 # compute from filename
-Z = compute(librosa.util.example_audio_file())
+Z, ts = compute(librosa.util.example_audio_file())
 
 # compute from pcm
 y, sr = librosa.load(librosa.util.example_audio_file())
