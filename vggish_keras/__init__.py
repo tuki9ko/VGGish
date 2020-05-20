@@ -1,8 +1,9 @@
+import librosa
 import pumpp
 import numpy as np
 
 from .vggish import VGGish
-from .pump import get_pump
+from .pump import get_pump, get_sampler, get_features, get_timesteps
 from . import params
 p = params
 
@@ -11,38 +12,27 @@ p = params
 def get_embeddings(filename=None, y=None, sr=None, **kw):
     model, pump, sampler = get_embedding_model(**kw)
 
-    # compute input data
-    X = pump.transform(filename, y=y, sr=sr)
-    X = np.stack([x[params.PUMP_INPUT][0] for x in sampler(X)], axis=0)
-
     # compute model outputs
-    z = model.predict(X)
-    ts = np.arange(len(z)) / pump.ops[0].sr * pump.ops[0].hop_length
+    X = get_features(filename, y, sr, pump=pump, sampler=sampler)
+    Z = model.predict(X)
+    return Z, get_timesteps(Z, pump, sampler)
 
-    return ts, z
-
-def get_embedding_model(model=None, pump=None, sampler=None,
-                        duration=None, hop_duration=None,
+def get_embedding_model(model=None, pump=None, sampler=None, hop_duration=None,
                         include_top=None, compress=None, weights=None,):
     # make sure we have model, pump, and sampler
-    pump = pump or get_pump()
-    model = model or VGGish(pump, include_top=include_top, compress=compress, weights=weights)
-
     # get the sampler with the proper frame sizes
-    if not sampler:
-        # it's defined by the model top
-        _, n_frames, _, _ = model.input_shape
-
-        # or use func parameters
-        op = pump['mel']
-        n_frames = n_frames or op.n_frames(duration or params.EXAMPLE_WINDOW_SECONDS)
-        hop_frames = op.n_frames(hop_duration or params.EXAMPLE_HOP_SECONDS)
-        sampler = pumpp.SequentialSampler(
-            n_frames, *pump.ops, stride=hop_frames)
-
+    pump = pump or get_pump()
+    model = model or VGGish(
+        pump, include_top=include_top, compress=compress, weights=weights)
+    sampler = sampler or get_sampler(
+        pump, n_frames=model.input_shape[1], hop_duration=hop_duration)
     return model, pump, sampler
 
 def get_embedding_function(*a, **kw):
     import functools
     model, pump, sampler = get_embedding_model(*a, **kw)
-    return functools.partial(get_embeddings, model=model, pump=pump, sampler=sampler)
+    compute = functools.partial(get_embeddings, model=model, pump=pump, sampler=sampler)
+    compute.model = model
+    compute.pump = pump
+    compute.sampler = sampler
+    return compute
