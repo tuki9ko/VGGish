@@ -8,7 +8,7 @@ from distutils.command.install import install
 
 setuptools.setup(
     name='vggish-keras',
-    version='0.0.18',
+    version='0.0.19',
     description='VGGish in Keras.',
     long_description=open(
         os.path.join(os.path.dirname(__file__), 'README.md')
@@ -32,7 +32,7 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'tensorflow',
-        'pumpp',
+        'pumpp@https://github.com/beasteers/pumpp/archive/tf_keras.zip',
         'requests',
         # to download the weights from google drive
         # TODO: manage session cookies with a standard lib
