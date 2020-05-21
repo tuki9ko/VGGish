@@ -8,7 +8,7 @@ from distutils.command.install import install
 
 setuptools.setup(
     name='vggish-keras',
-    version='0.1.0',
+    version='0.1.1',
     description='VGGish in Keras.',
     long_description=open(
         os.path.join(os.path.dirname(__file__), 'README.md')
