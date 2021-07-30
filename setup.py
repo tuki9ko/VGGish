@@ -11,7 +11,7 @@ setuptools.setup(
     version='0.1.1',
     description='VGGish in Keras.',
     long_description=open(
-        os.path.join(os.path.dirname(__file__), 'README.md')
+        os.path.join(os.path.dirname(__file__), 'README.MD')
     ).read().strip(),
     long_description_content_type='text/markdown',
     author='Bea Steers',
